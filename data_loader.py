@@ -1,31 +1,27 @@
 import re
 import os
+from results import *
+import math
 
 digit = r'\-?\d+'
 
-element_map = {
-    'gold' : 79,
-    'iron' : 26,
-    'titanium' : 22,
-    '2gold' : 79,
-    '3gold' : 79,
-}
 
-def Z(element):
-    return element_map[element]
-
-def get_metadata(file):
-    #print (file)
+def add_metadata(file, data):
     name, ext = file.split('/')[-1].split('.')
     if ext != "Spe":
         return None
     unprocessed = name.split('_')
-    if len(unprocessed) == 3 and unprocessed[2] == 'bad':
+    
+    if unprocessed[1] not in ('target', 'scatter'):
         return None
-    iteration = 1 if len(unprocessed) == 2 else int(re.search(digit, unprocessed[2]).group(0))
-    return str.lower(unprocessed[0]), int(unprocessed[1]), iteration
+    try:
+        data['angle'] = Result(int(unprocessed[0]), stat = 3)
+        data['source'] = "Cs-main"
+    except:
+        data['angle'] = None
+        data['source'] = unprocessed[0]
 
-def get_file_info(fp):
+def add_file_info(fp, data):
     """
     Given file path pointing to a .Spe file, returns total time and and a histogram of channel counts as a 2-tuple.
     """
@@ -35,15 +31,19 @@ def get_file_info(fp):
     time = int(times[0])
     #print(time)
     counts = []
+    sqrts = []
     for i in range(12, 2060):
         digit = r'\d+'
 
         count = int(re.search(digit, lines[i]).group(0))
 
         counts.append(count)
+        sqrts.append(math.sqrt(count))
 
-    return time, counts
-
+    data['time'] = Result(time + 0.5, stat = 0.5)
+    data['counts'] = sum(counts)
+    data['histogram'] = counts
+    data['errors'] = sqrts
 
 def read_data(file):
     """
@@ -64,13 +64,16 @@ def read_data(file):
         return None
     data['target'], data['angle'], data['iteration'] = metadata
     '''
-
-    data['time'], data['histogram'] = get_file_info(file)
-    data['counts'] = sum(data['histogram'])
-    data['cps'] = data['counts'] / data['time']
+    if add_metadata(file, data) is None:
+        return None
+    add_file_info(file, data)
 
     return data
 
+
+
+
+### Recursive stuff--not in use ###
 def add_data(data, file):
     """
     Adds data associated with a file to a dictionary.
