@@ -14,6 +14,7 @@ def add_metadata(file, data):
     
     if unprocessed[1] not in ('target', 'scatter'):
         return False
+    data['detector'] = unprocessed[1]
     try:
         data['angle'] = Result(int(unprocessed[0]), stat = 3)
         data['source'] = "Cs-main"
