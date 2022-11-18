@@ -9,17 +9,18 @@ digit = r'\-?\d+'
 def add_metadata(file, data):
     name, ext = file.split('/')[-1].split('.')
     if ext != "Spe":
-        return None
+        return False
     unprocessed = name.split('_')
     
     if unprocessed[1] not in ('target', 'scatter'):
-        return None
+        return False
     try:
         data['angle'] = Result(int(unprocessed[0]), stat = 3)
         data['source'] = "Cs-main"
     except:
         data['angle'] = None
         data['source'] = unprocessed[0]
+    return True
 
 def add_file_info(fp, data):
     """
@@ -64,7 +65,7 @@ def read_data(file):
         return None
     data['target'], data['angle'], data['iteration'] = metadata
     '''
-    if add_metadata(file, data) is None:
+    if not add_metadata(file, data):
         return None
     add_file_info(file, data)
 
