@@ -11,3 +11,5 @@ for date in dates:
     #get_calibration_fits(date)
 
 plot_calibration_variation(showData = True)
+
+print(calibrate(1500, channel_err=10, detector='target', date='16 November'))

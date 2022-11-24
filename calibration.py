@@ -212,14 +212,18 @@ def calibrate(channel_number, channel_err, detector, date, refit=False, findPeak
         a = calibration_functions[date][detector][0]
         a_error = calibration_functions[date][detector][1]
 
-    error = math.sqrt((a_error * channel_number)**2 + (a * channel_err)**2)
 
-    return linear(x=channel_number, a=a), error
+    # Note that we have fit a slope energy --> calibration so we need 1/a to conver the other way
+    error = math.sqrt((a_error * channel_number)**2 + ((1/a) * channel_err)**2)
+
+
+
+    return linear(x=channel_number, a=(1/a)), error
 
 def plot_calibration_variation(showData=False):
     plt.title('Variation in Calibration Functions')
-    plt.xlabel('Channel Number')
-    plt.ylabel('Energy (keV)')
+    plt.ylabel('Channel Number')
+    plt.xlabel('Energy (keV)')
 
     colors = ['red', 'blue', 'green', 'purple']
     index= 0

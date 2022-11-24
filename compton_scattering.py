@@ -9,17 +9,17 @@ import math
 dates = os.listdir('data/')
 
 channel_peaks = {
-#    '14 November' : {
-#        'target': [
-#            [120, 150, 30, 60, 90], 
-#            [500.0, 790.0, 275.0, 445.0, 625.0], 
-#            [3.0, 3.0, 3.0, 3.0, 3.0], 
-#            [10, 10, 10, 10, 10]], 
-#        'scatter': [
-#            [120, 150, 30, 60, 90], 
-#            [500.0, 440.0, 1060.0, 890.0, 645.0], 
-#            [3.0, 3.0, 3.0, 3.0, 3.0], 
-#            [10, 10, 10, 10, 10]]},
+    '14 November' : {
+        'target': [
+            [120, 150, 30, 60, 90], 
+            [500.0, 790.0, 275.0, 445.0, 625.0], 
+            [3.0, 3.0, 3.0, 3.0, 3.0], 
+            [10, 10, 10, 10, 10]], 
+        'scatter': [
+            [120, 150, 30, 60, 90], 
+            [500.0, 440.0, 1060.0, 890.0, 645.0], 
+            [3.0, 3.0, 3.0, 3.0, 3.0], 
+            [10, 10, 10, 10, 10]]},
 
     '16 November': {
         'target': [
@@ -65,7 +65,7 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
     color_index = 0
 
     if plot_daily_variation:
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
         fig.suptitle('Variation between Days')
 
     for date in channel_peaks:
@@ -114,10 +114,15 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
             ax2.set_title('Scatter')
             ax3.set_title('Target')
 
+            ax1.set(xlabel='Angle (degrees)')
+            ax1.set(ylabel='Energy (keV)')
+            ax2.set(xlabel='Angle (degrees)')
+            ax3.set(xlabel='Angle (degrees)')
+
+
             color_index +=1
     if plot_daily_variation:
         plt.legend()
-        plt.xlabel('Energy (keV)')
         plt.show()
         
     scatter_data = [angles, scatter_energies, angle_errs, scatter_energy_errs]
