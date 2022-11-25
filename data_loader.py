@@ -49,7 +49,7 @@ def add_file_info(fp, data):
         sqrts.append(math.sqrt(count))
 
     data['time'] = Result(time + 0.5, stat = 0.5)
-    data['counts'] = sum(counts)
+    data['counts'] = Result(np.sum(counts), math.sqrt(np.sum(counts)))
     data['histogram'] = counts
     data['errors'] = sqrts
 
