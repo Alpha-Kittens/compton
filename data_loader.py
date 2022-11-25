@@ -16,8 +16,14 @@ def add_metadata(file, data):
         return False
     data['detector'] = unprocessed[1]
     try:
-        data['angle'] = Result(int(unprocessed[0]), stat = 3)
-        data['source'] = "Cs-main"
+        if ',' not in unprocessed[0]:
+            data['angle'] = Result(int(unprocessed[0]), stat = 3)
+            data['source'] = "Cs-main"
+        else:
+            split = unprocessed[0].split(',')
+            angle_str = split[0] + '.' + split[1]
+            data['angle'] = Result(float(angle_str), stat = 3)
+            data['source'] = "Cs-main"
     except:
         data['angle'] = None
         data['source'] = unprocessed[0]

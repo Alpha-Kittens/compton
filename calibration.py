@@ -212,9 +212,11 @@ def calibrate(channel_number, channel_err, detector, date, refit=False, findPeak
         a = calibration_functions[date][detector][0]
         a_error = calibration_functions[date][detector][1]
 
+    inva = 1/a
+    invaerr = a_error/(a**2)
 
     # Note that we have fit a slope energy --> calibration so we need 1/a to conver the other way
-    error = math.sqrt((a_error * channel_number)**2 + ((1/a) * channel_err)**2)
+    error = math.sqrt(((invaerr) * channel_number)**2 + (inva * channel_err)**2)
 
 
 

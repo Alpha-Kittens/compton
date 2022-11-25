@@ -4,22 +4,44 @@ from data_loader import read_data
 import os
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 
 dates = os.listdir('data/')
 
+init_energy = 661 # keV
+rest_energy_e = 0.511 * (1e3) #keV
+
+def rad(angle):
+    return (math.pi * angle)/180
+
+def compton_prediction_photon(angle):
+    invE = (1/init_energy) + (1/rest_energy_e)*(1-math.cos(rad(angle)))
+
+    return 1/invE
+
+def compton_prediction_electron(angle):
+    return init_energy - compton_prediction_photon(angle)
+
+
+
+'''
+SAVED INFORMATION ABOUT PEAKS
+'''
+# Changes: removed 120 degree measurement on 14 Novemeber
+# angle 120, target = 500, scatter=500
 channel_peaks = {
     '14 November' : {
         'target': [
-            [120, 150, 30, 60, 90], 
-            [500.0, 790.0, 275.0, 445.0, 625.0], 
-            [3.0, 3.0, 3.0, 3.0, 3.0], 
-            [10, 10, 10, 10, 10]], 
+            [150, 30, 60, 90], 
+            [790.0, 275.0, 445.0, 625.0], 
+            [3.0, 3.0, 3.0, 3.0], 
+            [10, 10, 10, 10]], 
         'scatter': [
-            [120, 150, 30, 60, 90], 
-            [500.0, 440.0, 1060.0, 890.0, 645.0], 
-            [3.0, 3.0, 3.0, 3.0, 3.0], 
-            [10, 10, 10, 10, 10]]},
+            [150, 30, 60, 90], 
+            [440.0, 1060.0, 890.0, 645.0], 
+            [3.0, 3.0, 3.0, 3.0], 
+            [10, 10, 10, 10]]},
 
     '16 November': {
         'target': [
@@ -49,6 +71,58 @@ channel_peaks = {
             [3.0, 3.0, 3.0, 3.0], 
             [10, 10, 10, 10]]}
 }
+'''
+END OF SAVED DATA
+'''
+
+def find_channel_peaks(date):
+    target_angles = []
+    scatter_angles = []
+    target_angle_errs = []
+    scatter_angle_errs = []
+
+    target_channels = []
+    target_channel_errs = []
+    scatter_channels = []
+    scatter_channel_errs = []
+
+    folder = 'data/' + date + '/'
+    files = os.listdir(folder)
+
+    for file_name in files:
+            fp = folder + file_name
+            if '.Spe' in file_name:
+                data = read_data(fp)
+
+                histogram = data['histogram']
+                angle = data['angle']
+                detector = data['detector']
+
+                peak = get_peak(histogram, label= detector + ' ' + str(angle))
+
+                channel = peak[0]
+                channel_err = peak[1]
+
+                if detector == 'scatter':
+                    scatter_angles.append(angle.val)
+                    scatter_angle_errs.append(angle.tot)
+                    scatter_channels.append(channel)
+                    scatter_channel_errs.append(channel_err)
+                elif detector == 'target':
+                    target_angles.append(angle.val)
+                    target_angle_errs.append(angle.tot)
+                    target_channels.append(channel)
+                    target_channel_errs.append(channel_err)
+    target_data = [target_angles, target_channels, target_angle_errs, target_channel_errs]
+    scatter_data = [scatter_angles, scatter_channels, scatter_angle_errs, scatter_channel_errs]
+
+
+    data = {
+        'target' : target_data,
+        'scatter': scatter_data
+    }
+    print(data)
+    return data
 
 def get_scattering_data(plot=True, plot_daily_variation = False):
     angles = []
@@ -129,9 +203,12 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
     target_data = [angles, target_energies, angle_errs, target_energy_errs]
     sum_data = [angles, sum_energies, angle_errs, sum_energy_errs]
 
-    plot_data(scatter_data, label = 'scatter')
-    plot_data(target_data, label='target')
-    plot_data(sum_data, label='sum', show=True)
+    if plot:
+        plot_data(scatter_data, label = 'scatter')
+        plot_data(target_data, label='target')
+        plot_data(sum_data, label='sum', show=True)
+
+    return target_data,scatter_data, sum_data
 
 
 def plot_data(data, label, show=False):
@@ -141,61 +218,64 @@ def plot_data(data, label, show=False):
     yerr = data[3]
 
     plt.errorbar(x, y, xerr=xerr, yerr=yerr, label=label, fmt='o')
+    plt.xlabel('Angle (degrees)')
+    plt.ylabel('Energy (keV)')
 
     if show:
         plt.legend()
         plt.show()
 
 
-def find_channel_peaks(date):
-    target_angles = []
-    scatter_angles = []
-    target_angle_errs = []
-    scatter_angle_errs = []
+def compare_photon_compton():
+    target, scatter, sum = get_scattering_data(plot=False)
 
-    target_channels = []
-    target_channel_errs = []
-    scatter_channels = []
-    scatter_channel_errs = []
+    invScattEnergy = []
+    invScatterEnergyErr = []
 
-    folder = 'data/' + date + '/'
-    files = os.listdir(folder)
-
-    for file_name in files:
-            fp = folder + file_name
-            if '.Spe' in file_name:
-                data = read_data(fp)
-
-                histogram = data['histogram']
-                angle = data['angle']
-                detector = data['detector']
-
-                peak = get_peak(histogram, label= detector + ' ' + str(angle))
-
-                channel = peak[0]
-                channel_err = peak[1]
-
-                if detector == 'scatter':
-                    scatter_angles.append(angle.val)
-                    scatter_angle_errs.append(angle.tot)
-                    scatter_channels.append(channel)
-                    scatter_channel_errs.append(channel_err)
-                elif detector == 'target':
-                    target_angles.append(angle.val)
-                    target_angle_errs.append(angle.tot)
-                    target_channels.append(channel)
-                    target_channel_errs.append(channel_err)
-    target_data = [target_angles, target_channels, target_angle_errs, target_channel_errs]
-    scatter_data = [scatter_angles, scatter_channels, scatter_angle_errs, scatter_channel_errs]
+    for i in range(len(scatter[1])):
+        invScattEnergy.append(1/scatter[1][i])
+        invScatterEnergyErr.append(abs(scatter[3][i]/((scatter[1][i])**2)))
 
 
-    data = {
-        'target' : target_data,
-        'scatter': scatter_data
-    }
-    print(data)
-    return data
-                
+    scatterx = []
+    scatterxerr = []
+
+    for i in range(len(scatter[0])):
+        scatterx.append(1-math.cos(rad(scatter[0][i])))
+        scatterxerr.append(abs(math.sin(rad(scatter[0][i]) * rad(scatter[2][i]))))
+
+
+    
+    scatter_data = [scatterx, invScattEnergy, scatterxerr, invScatterEnergyErr]
+
+
+    scatter_eval = []
+    predicted_x = []
+    x = np.linspace(min(scatter[0]), max(scatter[0]), 1000)
+
+    for i in x:
+        scatter_eval.append(1/compton_prediction_photon(i))
+        predicted_x.append(1-math.cos(rad(i)))
+
+    plt.plot(predicted_x, scatter_eval, label='compton scattering prediction')
+    plot_data(scatter_data, label='scatter data', show=True)
+
+
+def compare_with_compton():
+    target, scatter, sum = get_scattering_data(plot=False)
+
+    x = np.linspace(min(scatter[0]), max(scatter[0]), 1000)
+    target_eval = []
+    scatter_eval = []
+    for i in x:
+        target_eval.append(compton_prediction_electron(i))
+        scatter_eval.append(compton_prediction_photon(i))
+
+    plt.plot(x, target_eval, label='compton target prediction')
+    plt.plot(x, scatter_eval, label='compton scatter prediction')
+
+    plot_data(target, 'target data')
+    plot_data(scatter, 'scatter data', show=True)
 
 
 
@@ -203,3 +283,5 @@ def find_channel_peaks(date):
 
 
 get_scattering_data(plot_daily_variation=True)
+compare_photon_compton()
+compare_with_compton()
