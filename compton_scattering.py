@@ -5,7 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import math
 import numpy as np
-
+from plots import plot_data
 
 dates = os.listdir('data/')
 
@@ -204,26 +204,11 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
     sum_data = [angles, sum_energies, angle_errs, sum_energy_errs]
 
     if plot:
-        plot_data(scatter_data, label = 'scatter')
-        plot_data(target_data, label='target')
-        plot_data(sum_data, label='sum', show=True)
+        plot_data(scatter_data, label = 'scatter', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+        plot_data(target_data, label='target', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+        plot_data(sum_data, label='sum', xlabel='Angle (degrees)', ylabel='Energy (keV)', show=True)
 
     return target_data,scatter_data, sum_data
-
-
-def plot_data(data, label, show=False):
-    x = data[0]
-    y = data[1]
-    xerr = data[2]
-    yerr = data[3]
-
-    plt.errorbar(x, y, xerr=xerr, yerr=yerr, label=label, fmt='o')
-    plt.xlabel('Angle (degrees)')
-    plt.ylabel('Energy (keV)')
-
-    if show:
-        plt.legend()
-        plt.show()
 
 
 def compare_photon_compton():
@@ -258,7 +243,7 @@ def compare_photon_compton():
         predicted_x.append(1-math.cos(rad(i)))
 
     plt.plot(predicted_x, scatter_eval, label='compton scattering prediction')
-    plot_data(scatter_data, label='scatter data', show=True)
+    plot_data(scatter_data, label='scatter data', xlabel='1-cos(Angle)', ylabel='1/Energy (1/keV)', show=True)
 
 
 def compare_with_compton():
@@ -274,8 +259,8 @@ def compare_with_compton():
     plt.plot(x, target_eval, label='compton target prediction')
     plt.plot(x, scatter_eval, label='compton scatter prediction')
 
-    plot_data(target, 'target data')
-    plot_data(scatter, 'scatter data', show=True)
+    plot_data(target, 'target data', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+    plot_data(scatter, 'scatter data', xlabel='Angle (degrees)', ylabel='Energy (keV)', show=True)
 
 
 

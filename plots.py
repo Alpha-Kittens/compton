@@ -11,3 +11,21 @@ def plot_histogram(title, histogram, vlines = []):
         plt.axvline(x, color = color, label = label, ls = '--')
     plt.legend()
     plt.show()
+
+
+def plot_data(data, label, xlabel=None, ylabel=None, show=False):
+    x = data[0]
+    y = data[1]
+    xerr = data[2]
+    yerr = data[3]
+
+    plt.errorbar(x, y, xerr=xerr, yerr=yerr, label=label, fmt='o')
+
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+
+    if show:
+        plt.legend()
+        plt.show()
