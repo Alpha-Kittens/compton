@@ -12,7 +12,7 @@ def add_metadata(file, data):
         return False
     unprocessed = name.split('_')
     
-    if unprocessed[1] not in ('target', 'scatter'):
+    if unprocessed[1] not in ('target', 'scatter', 'plastic'): # for plastic, angle is # of sheets
         return False
     data['detector'] = unprocessed[1]
     try:
@@ -52,6 +52,7 @@ def add_file_info(fp, data):
     data['counts'] = Result(np.sum(counts), math.sqrt(np.sum(counts)))
     data['histogram'] = counts
     data['errors'] = sqrts
+    data['cps'] = data['counts'] / data['time']
 
 def read_data(file):
     """

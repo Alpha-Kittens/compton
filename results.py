@@ -73,7 +73,15 @@ class Result:
 
     def cos(self):
         return (self*-1 + np.pi / 2).sin()
-        
+    
+    def log(self):
+        val = np.log(self.val)
+        if self.stat == 0 and self.sys == 0:
+            tot = abs(self.tot / self.val)
+            return Result(val, tot = tot)
+        stat = abs(self.stat / self.val)
+        sys = abs(self.sys / self.val)
+        return Result(val, stat = stat, sys = sys)
     
     def __add__(self, other):
         try:
@@ -116,6 +124,9 @@ class Result:
         tot = np.sqrt(stat**2 + sys**2)
         return Result(val, stat = stat, sys = sys, tot = tot)  
 
+    def __neg__(self):
+        return self * -1
+    
     def __pow__(self, other):
         try:
             val = self.val ** other.val

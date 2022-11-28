@@ -29,3 +29,38 @@ def plot_data(data, label, xlabel=None, ylabel=None, show=False):
     if show:
         plt.legend()
         plt.show()
+
+
+def plot_loaded_entry(info):
+    plt.title("Energy channel histogram for "+info['detector']+" detector at scattering angle "+str(info['angle'].val))
+    plt.xlabel("MCA channel")
+    plt.ylabel("Particle counts")
+    plt.plot([], [], color = 'blue', label = "Poisson errors on counts")
+    plt.bar(range(len(info['histogram'])), info['histogram'], width = 1, color = 'cyan', ecolor = 'blue', label = "Histogram data", yerr = np.sqrt(info['histogram']))
+    plt.legend()
+    plt.show()
+
+def plotting_unpack(results, mode = 'tot'):
+    """
+    Given an array of `Result` objects, returns array of values and errors usable with `plt.errorbar`. 
+    Arguments:
+        * `results` (array): array of `Result` objects.
+        * `mode` (string): specifying which error to use. 
+            - `tot`: total error (default)
+            - `stat`: statistical error
+            - `sys`: systematic error
+    Returns:
+        * `x`: array of values
+        * `xerr`: array of errors associated with `x`
+    """
+    x = []
+    xerr = []
+    for result in results:
+        x.append(result.val)
+        if mode == 'tot':
+            xerr.append(result.tot)
+        elif mode == 'stat':
+            xerr.append(result.stat)
+        elif mode == 'sys':
+            xerr.append(result.sys)
+    return x, xerr
