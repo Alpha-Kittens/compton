@@ -27,14 +27,18 @@ def get_profile_data(folder, plot=True):
 
         angle = data['angle']
 
-        #plot_histogram(title=str(angle), histogram=histogram)
+        plot_histogram(title=str(angle), histogram=histogram)
 
-        counts = sum(histogram)
+        #counts = sum(histogram)
+        #countserr = math.sqrt(counts)
+
+        counts = data['counts'].val
+        countserr= data['counts'].tot
 
         cps = counts/data['time'].val
 
         cpss.append(cps)
-        cpsserrs.append(math.sqrt(counts)/data['time'].val)
+        cpsserrs.append(countserr/data['time'].val)
         angles.append(angle.val)
         angleserrs.append(angle.tot)
 
@@ -100,6 +104,7 @@ def fit_profile(profile_data):
 
     plot_data(data_tot_propagated, label='total error', xlabel='Angle (degrees)', ylabel='Counts per second', show=False)
     plot_data(data_angle_y_errs, label='propagated angle error', xlabel='Angle (degrees)', ylabel='Counts per second', show=True)
+
 
 
 

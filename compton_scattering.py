@@ -28,8 +28,8 @@ def compton_prediction_electron(angle):
 '''
 SAVED INFORMATION ABOUT PEAKS
 '''
-# Changes: removed 120 degree measurement on 14 Novemeber
-# angle 120, target = 500, scatter=500
+# Via Guesstimate Method
+'''
 channel_peaks = {
     '14 November' : {
         'target': [
@@ -72,6 +72,49 @@ channel_peaks = {
             [10, 10, 10, 10]]}
 }
 '''
+
+#Via Peak Fitting Method
+channel_peaks = {
+    '14 November' : {
+        'target': [
+            [150, 30, 60, 90], 
+            [790.9272089051133, 271.4729702426541, 431.21690942823597, 627.7046365259916], 
+            [3.0, 3.0, 3.0, 3.0], 
+            [1.0962843298719873, 2.892614203151565, 1.5184902978171828, 1.4502451556813605]], 
+        'scatter': [
+            [150, 30, 60, 90], 
+            [429.40673587461697, 1061.8789778800121, 878.802512930587, 636.5401056124769], 
+            [3.0, 3.0, 3.0, 3.0], 
+            [2.7143044177632083, 3.1460798322401153, 2.6979125324334516, 2.1695938112311914]]},
+    '16 November': {
+        'target': [
+            [15, 45], 
+            [442.2487649126026, 379.66539327482144], 
+            [3.0, 3.0], 
+            [1.7261000457267448, 2.114916311825555]], 
+        'scatter': [
+            [15, 45], 
+            [1101.86859352851, 1176.976339550449], 
+            [3.0, 3.0], 
+            [2.331468769754514, 1.9792670657160563]]},
+    '18 November': {
+        'target': [[0], [408.3461478882692], [3.0], [6.7611503557080805]], 
+        'scatter': [[0], [1135.663989851356], [3.0], [4.368555721013384]]},
+    '21 November': {
+        'target': [
+            [-30, -60, -90, 120], 
+            [299.4280843299289, 536.6959690163543, 816.0744008816902, 1002.6052945297896], 
+            [3.0, 3.0, 3.0, 3.0], 
+            [2.2008251824796212, 3.3436862051031953, 2.6581903441589034, 1.6875452995587925]], 
+        'scatter': [
+            [-30, -60, -90, 120], 
+            [1265.320217694648, 1036.5830772521804, 756.922764692871, 545.4782963458681], 
+            [3.0, 3.0, 3.0, 3.0], 
+            [3.4791207684489645, 11.580881765299742, 4.715301571609517, 1.5666072355957783]]}
+}
+
+
+'''
 END OF SAVED DATA
 '''
 
@@ -98,7 +141,7 @@ def find_channel_peaks(date):
                 angle = data['angle']
                 detector = data['detector']
 
-                peak = get_peak(histogram, label= detector + ' ' + str(angle))
+                peak = get_peak(histogram, label= detector + ' ' + str(angle), method='gaussian fit')
 
                 channel = peak[0]
                 channel_err = peak[1]
@@ -155,10 +198,11 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
             print(scatter[0])
             raise Exception
         else:
-            angles = angles + target[0]
-            angle_errs = angle_errs + target[2]
-        
             for i in range(len(target[0])):
+                target[0][i] = target[0][i] - 2.5
+                scatter[0][i] = scatter[0][i] - 2.5
+
+
                 target_channel = target[1][i]
                 target_channel_err = target[3][i]
                 scatter_channel = scatter[1][i]
@@ -174,6 +218,9 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
         
                 sums.append(scatterenergy + targetenergy)
                 sum_energy_errs.append(math.sqrt(scaterenergyerr **2 + targetenergyerr**2))
+            
+            angles = angles + target[0]
+            angle_errs = angle_errs + target[2]
         
 
         scatter_energies = scatter_energies + energies_scatter
@@ -266,7 +313,7 @@ def compare_with_compton():
 
 
 
-
+#find_channel_peaks(date='21 November')
 get_scattering_data(plot_daily_variation=True)
 compare_photon_compton()
 compare_with_compton()
