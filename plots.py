@@ -1,25 +1,32 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_histogram(title, histogram, vlines = []):
+def plot_histogram(title, histogram, xaxis=None, vlines = [], show=True):
     plt.title("Energy channel histogram for " + title)
     plt.xlabel("MCA channel")
     plt.ylabel("Particle counts")
     plt.plot([], [], color = 'blue', label = "Poisson errors on counts")
-    plt.bar(range(len(histogram)), histogram, width = 1, color = 'cyan', ecolor = 'blue', label = "Histogram data", yerr = np.sqrt(histogram))
+    if xaxis is not None:
+        plt.bar(xaxis, histogram, width = 1, color = 'cyan', ecolor = 'blue', label = "Histogram data", yerr = np.sqrt(histogram))
+    else:
+        plt.bar(range(len(histogram)), histogram, width = 1, color = 'cyan', ecolor = 'blue', label = "Histogram data", yerr = np.sqrt(histogram))
     for label, x, color in vlines:
         plt.axvline(x, color = color, label = label, ls = '--')
     plt.legend()
-    plt.show()
+    if show:
+        plt.show()
 
 
-def plot_data(data, label, xlabel=None, ylabel=None, show=False):
+def plot_data(data, label, xlabel=None, ylabel=None, color = None, show=False):
     x = data[0]
     y = data[1]
     xerr = data[2]
     yerr = data[3]
 
-    plt.errorbar(x, y, xerr=xerr, yerr=yerr, label=label, fmt='o')
+    if color is not None:
+        plt.errorbar(x, y, xerr=xerr, yerr=yerr, label=label, fmt='o', color=color)
+    else:
+        plt.errorbar(x, y, xerr=xerr, yerr=yerr, label=label, fmt='o')
 
     if xlabel is not None:
         plt.xlabel(xlabel)

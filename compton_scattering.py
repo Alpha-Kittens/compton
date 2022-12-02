@@ -1,4 +1,4 @@
-from calibration import calibrate
+from calibration import calibrate, uncalibrate
 from extract_energies import get_peak
 from data_loader import read_data
 import os
@@ -114,9 +114,70 @@ channel_peaks = {
 }
 
 
+# From beam profile
+center = -2.52974745
+center_error = 0.55610793
+
 '''
 END OF SAVED DATA
 '''
+
+radius = 8 # measured in inches
+detector_width = 1 # measured in inches
+def scattering_angle_error(angle):
+    theta1 = math.atan2((detector_width + radius*math.sin(rad(angle)) + detector_width*math.cos(rad(angle))),(radius*math.cos(rad(angle)) - detector_width*math.sin(rad(angle)))) + math.atan(detector_width/radius)
+
+    return (((180/math.pi)*theta1) - angle) * (1/math.sqrt(12))* 2
+
+def plot_scattering_angle_error():
+    angle = np.linspace(-180, 180, 1000)
+    uncertainty = []
+    for i in angle:
+        uncertainty.append(scattering_angle_error(i))
+    
+    total = []
+    center_errors = []
+    for i in uncertainty:
+        center_errors.append(center_error)
+        total.append(math.sqrt(i**2 + center_error**2))
+
+    plt.plot(angle, uncertainty, label='scattering angle uncertainty')
+    plt.plot(angle, center_errors, label='center angle uncertainty')
+    plt.plot(angle, total, label='total angle uncertainty')
+    plt.xlabel('Measured Angle (degrees)')
+    plt.ylabel('Uncertainty in Scattering Angle (degrees)')
+    plt.legend()
+    plt.show()
+
+
+def compton_slope_photon(angle):
+    angle_min = angle - 0.001
+    angle_max = angle + 0.001
+
+    return (compton_prediction_photon(angle_max) - compton_prediction_photon(angle_min)) / (angle_max-angle_min)
+
+def compton_slope_electron(angle):
+    angle_min = angle - 0.001
+    angle_max = angle + 0.001
+
+    return (compton_prediction_electron(angle_max) - compton_prediction_electron(angle_min)) / (angle_max-angle_min)
+
+def plot_slope():
+    angle = np.linspace(-170, 170, 1000)
+
+    photon_slope = []
+    electron_slope = []
+
+    for i in angle:
+        photon_slope.append(compton_slope_photon(i))
+        electron_slope.append(compton_slope_electron(i))
+    
+    plt.plot(angle, photon_slope, label='scatter')
+    plt.plot(angle, electron_slope, label='target')
+    plt.legend()
+    plt.show()
+
+
 
 def find_channel_peaks(date):
     target_angles = []
@@ -167,10 +228,12 @@ def find_channel_peaks(date):
     print(data)
     return data
 
+
+
 def get_scattering_data(plot=True, plot_daily_variation = False):
     angles = []
-    angle_errs = []
     target_energies = []
+    angle_errs = []
     scatter_energies = []
     target_energy_errs = []
     scatter_energy_errs = []
@@ -192,6 +255,7 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
         energies_target = []
         energies_scatter = []
         sums = []
+        angle_err = []
         if target[0] != scatter[0]:
             print('Mismatch in angles')
             print(target[0])
@@ -199,8 +263,10 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
             raise Exception
         else:
             for i in range(len(target[0])):
-                target[0][i] = target[0][i] - 2.5
-                scatter[0][i] = scatter[0][i] - 2.5
+
+                # shift the center
+                target[0][i] = target[0][i] + center
+                scatter[0][i] = scatter[0][i] + center
 
 
                 target_channel = target[1][i]
@@ -218,9 +284,11 @@ def get_scattering_data(plot=True, plot_daily_variation = False):
         
                 sums.append(scatterenergy + targetenergy)
                 sum_energy_errs.append(math.sqrt(scaterenergyerr **2 + targetenergyerr**2))
+
+                angle_err.append(math.sqrt((scattering_angle_error(angle=target[0][i]))**2 + center_error**2))
             
             angles = angles + target[0]
-            angle_errs = angle_errs + target[2]
+            angle_errs = angle_errs + angle_err
         
 
         scatter_energies = scatter_energies + energies_scatter
@@ -293,10 +361,10 @@ def compare_photon_compton():
     plot_data(scatter_data, label='scatter data', xlabel='1-cos(Angle)', ylabel='1/Energy (1/keV)', show=True)
 
 
-def compare_with_compton():
-    target, scatter, sum = get_scattering_data(plot=False)
+def compare_with_compton(target_data, scatter_data, residual_plot = False):
+    #target, scatter, sum = get_scattering_data(plot=False)
 
-    x = np.linspace(min(scatter[0]), max(scatter[0]), 1000)
+    x = np.linspace(min(scatter_data[0]), max(scatter_data[0]), 1000)
     target_eval = []
     scatter_eval = []
     for i in x:
@@ -306,14 +374,132 @@ def compare_with_compton():
     plt.plot(x, target_eval, label='compton target prediction')
     plt.plot(x, scatter_eval, label='compton scatter prediction')
 
-    plot_data(target, 'target data', xlabel='Angle (degrees)', ylabel='Energy (keV)')
-    plot_data(scatter, 'scatter data', xlabel='Angle (degrees)', ylabel='Energy (keV)', show=True)
+    plot_data(target_data, 'target data', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+    plot_data(scatter_data, 'scatter data', xlabel='Angle (degrees)', ylabel='Energy (keV)', show=True)
+
+    if residual_plot:
+        fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+
+        residuals_target = []
+        residuals_scatter = []
+
+        for i in range(len(scatter_data[0])):
+            residuals_target.append(target_data[1][i] - compton_prediction_electron(target_data[0][i]))
+            residuals_scatter.append(scatter_data[1][i] - compton_prediction_photon(scatter_data[0][i]))
+    
+        target_residual_data = [target_data[0], residuals_target, 0, target_data[3]]
+        scatter_residual_data = [scatter_data[0], residuals_scatter, 0, scatter_data[3]]
+
+        ax1.errorbar(target_data[0], residuals_target, yerr=target_data[3], fmt='o')
+        ax1.set(title='Target Residuals', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+        ax2.errorbar(scatter_data[0], residuals_scatter, yerr=scatter_data[3], fmt='o')
+        ax2.set(title='Scatter Residuals', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+        ax1.hlines(0, min(target_data[0]), max(target_data[0]), colors='red', linestyles = 'dashed')
+        ax2.hlines(0, min(target_data[0]), max(target_data[0]), colors='red', linestyles = 'dashed')
+
+        plt.show()
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+
+        ax1.errorbar(target_data[0], np.array(residuals_target)/np.array(target_data[3]), yerr=1, fmt='o')
+        ax1.set(title='Target Residuals (normalized by error)', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+        ax2.errorbar(scatter_data[0], np.array(residuals_scatter)/np.array(scatter_data[3]), yerr=1, fmt='o')
+        ax2.set(title='Scatter Residuals (normalized by error)', xlabel='Angle (degrees)', ylabel='Energy (keV)')
+        ax1.hlines(0, min(target_data[0]), max(target_data[0]), colors='red', linestyles = 'dashed')
+        ax2.hlines(0, min(target_data[0]), max(target_data[0]), colors='red', linestyles = 'dashed')
+
+        plt.show()
+
+
+        
+
+
+def propogate_angle_error(data, detector):
+    init_y_err = data[3]
+    angle_err = data[2]
+    propagated_angle_err = []
+    angle = data[0]
+    for i in range(len(angle)):
+        if detector == 'target':
+            propagated_angle_err.append(abs(compton_slope_electron(angle[i]) * angle_err[i]))
+        elif detector == 'scatter':
+            propagated_angle_err.append(abs(compton_slope_photon(angle[i]) * angle_err[i]))
+    
+    
+    total_error = []
+    for i in range(len(init_y_err)):
+        total_error.append(math.sqrt(init_y_err[i]**2 + propagated_angle_err[i]**2))
+    
+    return total_error
+
+
+def get_final_data(target_data, scatter_data):
+    new_errors_target = propogate_angle_error(target_data, 'target')
+    new_errors_scatter = propogate_angle_error(scatter_data, 'scatter')
+
+    #new_target = [target_data[0], target_data[1], 0, new_errors_target]
+    #new_scatter = [scatter_data[0], scatter_data[1], 0, new_errors_scatter]
+
+    final_angle = []
+    final_target_err = []
+    final_scatter_err = []
+    final_target = []
+    final_scatter = []
+    for i in range(len(target_data[0])):
+        if abs(target_data[0][i]) > 20:
+            final_angle.append(target_data[0][i])
+            final_target_err.append(new_errors_target[i])
+            final_scatter_err.append(new_errors_scatter[i])
+            final_target.append(target_data[1][i])
+            final_scatter.append(scatter_data[1][i])
+    
+    final_target_data = [final_angle, final_target, 0, final_target_err]
+    final_scatter_data = [final_angle, final_scatter, 0, final_scatter_err]
+
+    return final_target_data, final_scatter_data
 
 
 
 
+def uncalibrate_prediction_plot():
+    target, scatter, sum = get_scattering_data(plot=False)
 
-#find_channel_peaks(date='21 November')
-get_scattering_data(plot_daily_variation=True)
-compare_photon_compton()
-compare_with_compton()
+    x = np.linspace(min(scatter[0]), max(scatter[0]), 1000)
+
+    colors = ['blue', 'purple', 'green', 'red']
+    colorindex = 0
+
+    for date in channel_peaks:
+        target_eval = []
+        scatter_eval = []
+        for i in x:
+            target_eval.append(uncalibrate(energy=compton_prediction_electron(i), energy_err=0, detector='target', date=date)[0])
+            scatter_eval.append(uncalibrate(energy=compton_prediction_photon(i), energy_err=0, detector='scatter', date=date)[0])
+
+        plot_data(data=channel_peaks[date]['target'], label='target data ' + date, color=colors[colorindex])
+        plot_data(data=channel_peaks[date]['scatter'], label='scatter data ' + date, color=colors[colorindex])        
+        
+        plt.plot(x, target_eval, label='compton target prediction ' + date, color=colors[colorindex])
+        plt.plot(x, scatter_eval, label='compton scatter prediction ' + date, color=colors[colorindex])
+
+        colorindex +=1
+    
+    plt.hlines(y=60, xmin = min(x), xmax=max(x), colors='black', linestyles='dashed', label='discrimnator value')
+    plt.xlabel('Angle (degrees)')
+    plt.ylabel('channel number')
+    #plt.legend()
+    plt.show()
+
+
+
+plot_scattering_angle_error()
+plot_slope()
+#find_channel_peaks(date='16 November')
+target_data, scatter_data, sum_data = get_scattering_data(plot_daily_variation=True)
+#compare_photon_compton()
+compare_with_compton(target_data, scatter_data)
+
+final_target_data, final_scatter_data = get_final_data(target_data, scatter_data)
+compare_with_compton(final_target_data, final_scatter_data, residual_plot=True)
+
+#uncalibrate_prediction_plot()

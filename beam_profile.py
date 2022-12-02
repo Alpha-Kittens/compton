@@ -27,7 +27,7 @@ def get_profile_data(folder, plot=True):
 
         angle = data['angle']
 
-        plot_histogram(title=str(angle), histogram=histogram)
+        #plot_histogram(title=str(angle), histogram=histogram)
 
         #counts = sum(histogram)
         #countserr = math.sqrt(counts)

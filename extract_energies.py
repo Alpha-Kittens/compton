@@ -115,8 +115,7 @@ def fit_lin_gauss(x, hist, init_guess):
         eval.append(lin_gauss(i, a=params['a'], b=params['b'], amp=params['amp'], cen=params['cen'], sigma=params['sigma']))
         init_eval.append(lin_gauss(i, a=init_params['a'], b=init_params['b'], amp=init_params['amp'], cen=init_params['cen'], sigma=init_params['sigma']))
 
-    
-    plt.scatter(x=x, y=hist, marker='o', label='data')
+    plot_histogram(title = '', histogram=hist, xaxis=x, show=False)
     plt.plot(xaxis, eval, label='fit', color='red')
     plt.plot(xaxis, init_eval, label='inital guess')
     plt.legend()
